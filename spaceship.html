@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,15 +12,27 @@
     <div id="enemy-container"></div>
     <div id="bullets-container"></div>
     <div id="hud">
-      <div id="score">Puntaje: 0</div>
-      <div id="lives">Vidas: 3</div>
-      <div id="level">Nivel: 1</div>
-      <div id="high-score">Record: 0</div>
+      <div id="score">Score: 0</div>
+      <div id="lives">Lives: 3</div>
+      <div id="level">Level: 1</div>
+      <div id="high-score">Best: 0</div>
+      <div id="power-status">Power: None</div>
     </div>
+    <button id="pause-button" type="button" aria-label="Pause game">Pause</button>
     <div id="message" class="message">
       <h1>Space Invaders</h1>
-      <p id="message-text">Flechas para moverte, espacio para disparar, P para pausar.</p>
-      <button id="start-button" type="button">Jugar</button>
+      <p id="message-text">Use arrow keys to move, space to shoot, and P to pause.</p>
+      <ul class="instructions">
+        <li>Destroy enemies to score points and level up.</li>
+        <li>Shield power-ups block hits. Double Shot lasts for 9 seconds.</li>
+        <li>A boss appears every 5 levels.</li>
+      </ul>
+      <button id="start-button" type="button">Play</button>
+    </div>
+    <div id="touch-controls" aria-label="Touch controls">
+      <button class="touch-button" type="button" data-action="left" aria-label="Move left">Left</button>
+      <button class="touch-button shoot-button" type="button" data-action="shoot" aria-label="Shoot">Fire</button>
+      <button class="touch-button" type="button" data-action="right" aria-label="Move right">Right</button>
     </div>
   </div>
   <script src="script.js"></script>

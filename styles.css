@@ -29,6 +29,25 @@ body {
     z-index: 3;
   }
 
+  #pause-button {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 5;
+    padding: 8px 14px;
+    border: 0;
+    border-radius: 6px;
+    background: rgba(16, 20, 34, 0.78);
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  #pause-button:hover {
+    background: rgba(38, 49, 80, 0.9);
+  }
+
   .bullet {
     width: 5px;
     height: 16px;
@@ -53,6 +72,15 @@ body {
   #player.hit {
     animation: player-hit 0.4s steps(2, end);
   }
+
+  #player.shielded::after {
+    content: "";
+    position: absolute;
+    inset: -8px;
+    border: 3px solid rgba(77, 222, 255, 0.88);
+    border-radius: 50%;
+    box-shadow: 0 0 18px rgba(77, 222, 255, 0.95);
+  }
   
   .enemy {
     width: 40px;
@@ -61,6 +89,73 @@ body {
     border-radius: 8px 8px 16px 16px;
     box-shadow: 0 0 14px rgba(255, 64, 64, 0.8);
     position: absolute;
+  }
+
+  .enemy.raider {
+    background: linear-gradient(135deg, #ffcb45, #d64c12);
+    border-radius: 50% 50% 12px 12px;
+    box-shadow: 0 0 16px rgba(255, 203, 69, 0.85);
+  }
+
+  .enemy.brute {
+    width: 46px;
+    height: 46px;
+    background: linear-gradient(135deg, #bf6cff, #47168a);
+    border-radius: 10px;
+    box-shadow: 0 0 18px rgba(191, 108, 255, 0.86);
+  }
+
+  .enemy.boss {
+    width: 140px;
+    height: 96px;
+    background: linear-gradient(135deg, #ff5f7e, #7b1d5f 46%, #201047);
+    border-radius: 22px 22px 34px 34px;
+    box-shadow: 0 0 28px rgba(255, 95, 126, 0.95);
+  }
+
+  .enemy.boss::before,
+  .enemy.boss::after {
+    content: "";
+    position: absolute;
+    bottom: -18px;
+    width: 26px;
+    height: 34px;
+    background: #ffcb45;
+    border-radius: 50%;
+    box-shadow: 0 0 20px rgba(255, 203, 69, 0.9);
+  }
+
+  .enemy.boss::before {
+    left: 28px;
+  }
+
+  .enemy.boss::after {
+    right: 28px;
+  }
+
+  .enemy.damaged {
+    filter: brightness(1.8);
+  }
+
+  .power-up {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    position: absolute;
+    border-radius: 50%;
+    color: #05111d;
+    font-size: 16px;
+    font-weight: 800;
+    box-shadow: 0 0 18px rgba(255, 255, 255, 0.72);
+  }
+
+  .power-up.shield {
+    background: #4ddeff;
+  }
+
+  .power-up.double {
+    background: #8cff73;
   }
   
     .explosion {
@@ -83,6 +178,7 @@ body {
         text-align: center;
         text-shadow: 0 2px 16px rgba(0, 0, 0, 0.8);
         z-index: 4;
+        width: min(92vw, 720px);
     }
 
     .message h1 {
@@ -95,6 +191,23 @@ body {
         margin: 0;
         font-size: clamp(18px, 3vw, 26px);
         line-height: 1.35;
+    }
+
+    .instructions {
+        display: grid;
+        gap: 8px;
+        max-width: 620px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font-size: clamp(15px, 2vw, 19px);
+        line-height: 1.35;
+    }
+
+    .instructions li {
+        padding: 8px 12px;
+        border-radius: 6px;
+        background: rgba(6, 12, 24, 0.58);
     }
 
     .message.hidden {
@@ -124,6 +237,38 @@ body {
         outline-offset: 4px;
     }
 
+    #touch-controls {
+        position: absolute;
+        left: 50%;
+        bottom: 16px;
+        transform: translateX(-50%);
+        display: none;
+        grid-template-columns: 80px 92px 80px;
+        gap: 10px;
+        z-index: 5;
+    }
+
+    .touch-button {
+        height: 54px;
+        border: 0;
+        border-radius: 8px;
+        background: rgba(16, 20, 34, 0.78);
+        color: white;
+        font-size: 16px;
+        font-weight: 800;
+        cursor: pointer;
+        touch-action: manipulation;
+    }
+
+    .touch-button:active {
+        background: rgba(77, 222, 255, 0.85);
+        color: #05111d;
+    }
+
+    .shoot-button {
+        background: rgba(41, 158, 103, 0.86);
+    }
+
     @keyframes player-hit {
         0%, 100% {
             opacity: 1;
@@ -131,6 +276,26 @@ body {
 
         50% {
             opacity: 0.25;
+        }
+    }
+
+    @media (max-width: 720px), (pointer: coarse) {
+        #touch-controls {
+            display: grid;
+        }
+
+        #hud {
+            font-size: 16px;
+            top: 8px;
+            right: 8px;
+        }
+
+        #player {
+            bottom: 78px;
+        }
+
+        .message {
+            width: min(92vw, 560px);
         }
     }
 
