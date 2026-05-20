@@ -1,0 +1,136 @@
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-image: url('background.jpg');
+    background-size: cover;
+    background-position: center;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  
+  
+  #game-container {
+    width: 100%;
+    height: 100vh;
+    position: relative;
+  }
+
+  #hud {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: grid;
+    gap: 4px;
+    justify-items: end;
+    color: white;
+    font-size: clamp(18px, 3vw, 34px);
+    font-weight: 700;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.75);
+    z-index: 3;
+  }
+
+  .bullet {
+    width: 5px;
+    height: 16px;
+    background: #ffe94a;
+    border-radius: 999px;
+    box-shadow: 0 0 12px #ffe94a;
+    position: absolute;
+  }
+  #player {
+    width: 70px;
+    height: 70px;
+    background-image: url('spaceship.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  #player.hit {
+    animation: player-hit 0.4s steps(2, end);
+  }
+  
+  .enemy {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #ff4040, #8f1010);
+    border-radius: 8px 8px 16px 16px;
+    box-shadow: 0 0 14px rgba(255, 64, 64, 0.8);
+    position: absolute;
+  }
+  
+    .explosion {
+        width: 50px;
+        height: 50px;
+        background-image: url('explosion.png');
+        background-size: cover;
+        position: absolute;
+    }
+
+    .message {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: grid;
+        justify-items: center;
+        gap: 24px;
+        color: white;
+        text-align: center;
+        text-shadow: 0 2px 16px rgba(0, 0, 0, 0.8);
+        z-index: 4;
+    }
+
+    .message h1 {
+        margin: 0;
+        font-size: clamp(44px, 9vw, 90px);
+    }
+
+    .message p {
+        max-width: 520px;
+        margin: 0;
+        font-size: clamp(18px, 3vw, 26px);
+        line-height: 1.35;
+    }
+
+    .message.hidden {
+        display: none;
+    }
+
+    #start-button {
+        font-size: 30px;
+        padding: 10px 20px;
+        background-color: #299e67;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    #start-button:hover {
+        background-color: #1e7e4b;
+    }
+
+    #start-button:active {
+        background-color: #1e7e4b;
+    }
+
+    #start-button:focus-visible {
+        outline: 3px solid white;
+        outline-offset: 4px;
+    }
+
+    @keyframes player-hit {
+        0%, 100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.25;
+        }
+    }
+
