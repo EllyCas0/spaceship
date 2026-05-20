@@ -22,12 +22,41 @@
     <div id="message" class="message">
       <h1>Space Invaders</h1>
       <p id="message-text">Use arrow keys to move, space to shoot, and P to pause.</p>
-      <ul class="instructions">
+      <button id="instructions-button" class="secondary-button" type="button" aria-expanded="false" aria-controls="instructions-panel">How to Play</button>
+      <ul id="instructions-panel" class="instructions hidden">
         <li>Destroy enemies to score points and level up.</li>
         <li>Shield power-ups block hits. Double Shot lasts for 9 seconds.</li>
         <li>A boss appears every 5 levels.</li>
       </ul>
-      <button id="start-button" type="button">Play</button>
+      <div id="settings-panel" class="settings-panel hidden">
+        <label class="setting-row" for="sound-toggle">
+          <span>Sound</span>
+          <input id="sound-toggle" type="checkbox" checked>
+        </label>
+        <label class="setting-row stacked-setting" for="background-select">
+          <span>Background</span>
+          <select id="background-select">
+            <option value="red-nebula">Red Nebula</option>
+            <option value="deep-space">Deep Space</option>
+            <option value="blue-rift">Blue Rift</option>
+            <option value="violet-storm">Violet Storm</option>
+          </select>
+        </label>
+        <label class="setting-row stacked-setting" for="ship-select">
+          <span>Ship</span>
+          <select id="ship-select">
+            <option value="classic">Classic</option>
+            <option value="frost">Frost</option>
+            <option value="solar">Solar</option>
+            <option value="shadow">Shadow</option>
+          </select>
+        </label>
+      </div>
+      <div class="menu-actions">
+        <button id="start-button" type="button">Play</button>
+        <button id="settings-button" class="secondary-button" type="button" aria-expanded="false" aria-controls="settings-panel">Settings</button>
+        <button id="exit-button" class="secondary-button danger-button" type="button">Exit</button>
+      </div>
     </div>
     <div id="touch-controls" aria-label="Touch controls">
       <button class="touch-button" type="button" data-action="left" aria-label="Move left">Left</button>

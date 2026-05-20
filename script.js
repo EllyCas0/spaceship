@@ -11,6 +11,14 @@ const messageTitle = message.querySelector('h1');
 const messageText = document.getElementById('message-text');
 const startButton = document.getElementById('start-button');
 const pauseButton = document.getElementById('pause-button');
+const instructionsButton = document.getElementById('instructions-button');
+const instructionsPanel = document.getElementById('instructions-panel');
+const settingsButton = document.getElementById('settings-button');
+const settingsPanel = document.getElementById('settings-panel');
+const soundToggle = document.getElementById('sound-toggle');
+const backgroundSelect = document.getElementById('background-select');
+const shipSelect = document.getElementById('ship-select');
+const exitButton = document.getElementById('exit-button');
 const touchButtons = document.querySelectorAll('.touch-button');
 
 const enemyTypes = [
@@ -24,6 +32,7 @@ const soundSettings = {
   explosion: { frequency: 150, endFrequency: 45, duration: 0.22, type: 'sawtooth', gain: 0.085 },
   power: { frequency: 520, endFrequency: 900, duration: 0.16, type: 'triangle', gain: 0.07 },
   hit: { frequency: 110, endFrequency: 70, duration: 0.18, type: 'sawtooth', gain: 0.08 },
+  bossShot: { frequency: 210, endFrequency: 130, duration: 0.11, type: 'square', gain: 0.045 },
   gameOver: { frequency: 260, endFrequency: 90, duration: 0.45, type: 'triangle', gain: 0.08 },
   boss: { frequency: 90, endFrequency: 210, duration: 0.5, type: 'sawtooth', gain: 0.075 },
   level: { frequency: 360, endFrequency: 720, duration: 0.18, type: 'triangle', gain: 0.06 },
@@ -33,6 +42,7 @@ let animationFrame;
 let enemySpawnInterval;
 let audioContext;
 let bullets = [];
+let bossBullets = [];
 let enemies = [];
 let powerUps = [];
 let pressedKeys = new Set();
@@ -47,6 +57,16 @@ let isPaused = false;
 let lastShotAt = 0;
 let activeBossLevel = null;
 let defeatedBossLevels = new Set();
+let nextBossLevel = 5;
+let isSoundEnabled = loadSoundSetting();
+let selectedBackground = loadBackgroundSetting();
+let selectedShip = loadShipSetting();
+
+soundToggle.checked = isSoundEnabled;
+backgroundSelect.value = selectedBackground;
+shipSelect.value = selectedShip;
+applyBackground(selectedBackground);
+applyShip(selectedShip);
 
 function getAudioContext() {
   if (!window.AudioContext && !window.webkitAudioContext) {
@@ -65,6 +85,10 @@ function getAudioContext() {
 }
 
 function playSound(name) {
+  if (!isSoundEnabled) {
+    return;
+  }
+
   const context = getAudioContext();
   const settings = soundSettings[name];
 
@@ -101,6 +125,64 @@ function saveHighScore() {
   } catch (error) {
     // The game still works if private mode or browser settings block storage.
   }
+}
+
+function loadSoundSetting() {
+  try {
+    return localStorage.getItem('spaceInvadersSoundEnabled') !== 'false';
+  } catch (error) {
+    return true;
+  }
+}
+
+function saveSoundSetting() {
+  try {
+    localStorage.setItem('spaceInvadersSoundEnabled', String(isSoundEnabled));
+  } catch (error) {
+    // Sound preference is optional; gameplay does not depend on storage.
+  }
+}
+
+function loadBackgroundSetting() {
+  try {
+    return localStorage.getItem('spaceInvadersBackground') || 'red-nebula';
+  } catch (error) {
+    return 'red-nebula';
+  }
+}
+
+function saveBackgroundSetting() {
+  try {
+    localStorage.setItem('spaceInvadersBackground', selectedBackground);
+  } catch (error) {
+    // Background preference is optional; the default still works.
+  }
+}
+
+function applyBackground(backgroundName) {
+  document.body.classList.remove('bg-red-nebula', 'bg-deep-space', 'bg-blue-rift', 'bg-violet-storm');
+  document.body.classList.add('bg-' + backgroundName);
+}
+
+function loadShipSetting() {
+  try {
+    return localStorage.getItem('spaceInvadersShip') || 'classic';
+  } catch (error) {
+    return 'classic';
+  }
+}
+
+function saveShipSetting() {
+  try {
+    localStorage.setItem('spaceInvadersShip', selectedShip);
+  } catch (error) {
+    // Ship preference is optional; the classic ship remains available.
+  }
+}
+
+function applyShip(shipName) {
+  player.classList.remove('ship-classic', 'ship-frost', 'ship-solar', 'ship-shadow');
+  player.classList.add('ship-' + shipName);
 }
 
 function updateHud() {
@@ -156,30 +238,35 @@ function createEnemy() {
 }
 
 function createBoss() {
-  if (activeBossLevel === level || defeatedBossLevels.has(level)) {
+  if (activeBossLevel !== null || defeatedBossLevels.has(nextBossLevel)) {
     return;
   }
 
   clearInterval(enemySpawnInterval);
-  activeBossLevel = level;
+  activeBossLevel = nextBossLevel;
 
   const boss = document.createElement('div');
   boss.className = 'enemy boss';
-  boss.dataset.hp = String(14 + level * 2);
-  boss.dataset.points = String(180 + level * 20);
+  boss.dataset.hp = String(14 + activeBossLevel * 2);
+  boss.dataset.points = String(180 + activeBossLevel * 20);
   boss.dataset.speed = '0.35';
   boss.dataset.sway = '2.8';
   boss.dataset.drift = '1';
   boss.dataset.boss = 'true';
+  boss.dataset.lastShotAt = String(Date.now());
   boss.style.left = window.innerWidth / 2 - 70 + 'px';
   boss.style.top = '-120px';
   enemyContainer.appendChild(boss);
   enemies.push(boss);
+  closeInstructions();
+  closeSettings();
   messageTitle.textContent = 'Boss Incoming';
   messageText.textContent = 'Focus fire and stay out of its path.';
+  message.classList.add('notice');
   message.classList.remove('hidden');
   setTimeout(() => {
     if (isRunning && !isPaused) {
+      message.classList.remove('notice');
       message.classList.add('hidden');
     }
   }, 1200);
@@ -195,12 +282,15 @@ function resetGame() {
   isPaused = false;
   activeBossLevel = null;
   defeatedBossLevels = new Set();
+  nextBossLevel = 5;
   updateHud();
 
   bullets.forEach((bullet) => bullet.remove());
+  bossBullets.forEach((bullet) => bullet.remove());
   enemies.forEach((enemy) => enemy.remove());
   powerUps.forEach((powerUp) => powerUp.remove());
   bullets = [];
+  bossBullets = [];
   enemies = [];
   powerUps = [];
   pressedKeys.clear();
@@ -312,6 +402,81 @@ function updateBullets() {
   });
 }
 
+function createBossBullet(boss, leftOffset) {
+  const bullet = document.createElement('div');
+  bullet.className = 'boss-bullet';
+  bullet.style.left = boss.offsetLeft + boss.offsetWidth / 2 + leftOffset - 5 + 'px';
+  bullet.style.top = boss.offsetTop + boss.offsetHeight - 4 + 'px';
+  bulletsContainer.appendChild(bullet);
+  bossBullets.push(bullet);
+}
+
+function getBossNumber() {
+  return Math.max(1, Math.floor(activeBossLevel / 5));
+}
+
+function getBossShotDelay() {
+  const bossNumber = getBossNumber();
+
+  if (bossNumber < 2) {
+    return null;
+  }
+
+  return Math.max(520, 1850 - (bossNumber - 2) * 180);
+}
+
+function updateBossShooting(enemy) {
+  if (enemy.dataset.boss !== 'true') {
+    return;
+  }
+
+  const shotDelay = getBossShotDelay();
+
+  if (!shotDelay) {
+    return;
+  }
+
+  const now = Date.now();
+  const lastShotAt = Number(enemy.dataset.lastShotAt) || 0;
+
+  if (now - lastShotAt < shotDelay) {
+    return;
+  }
+
+  enemy.dataset.lastShotAt = String(now);
+
+  if (getBossNumber() >= 4) {
+    createBossBullet(enemy, -28);
+    createBossBullet(enemy, 0);
+    createBossBullet(enemy, 28);
+  } else {
+    createBossBullet(enemy, -16);
+    createBossBullet(enemy, 16);
+  }
+
+  playSound('bossShot');
+}
+
+function updateBossBullets() {
+  bossBullets = bossBullets.filter((bullet) => {
+    const nextTop = parseInt(bullet.style.top || 0) + 7 + Math.min(4, getBossNumber());
+    bullet.style.top = nextTop + 'px';
+
+    if (isColliding(player.getBoundingClientRect(), bullet.getBoundingClientRect())) {
+      bullet.remove();
+      loseLife();
+      return false;
+    }
+
+    if (nextTop > window.innerHeight) {
+      bullet.remove();
+      return false;
+    }
+
+    return true;
+  });
+}
+
 function updateEnemies() {
   enemies = enemies.filter((enemy) => {
     const speed = Number(enemy.dataset.speed) * getEnemySpeed();
@@ -325,6 +490,7 @@ function updateEnemies() {
 
     enemy.style.top = nextTop + 'px';
     enemy.style.left = Math.min(Math.max(0, nextLeft), maxLeft) + 'px';
+    updateBossShooting(enemy);
 
     if (nextLeft <= 0 || nextLeft >= maxLeft) {
       enemy.dataset.drift = String(drift * -1);
@@ -336,6 +502,12 @@ function updateEnemies() {
     }
 
     if (isColliding(player.getBoundingClientRect(), enemy.getBoundingClientRect())) {
+      if (isBoss) {
+        activeBossLevel = null;
+        nextBossLevel = Math.floor(level / 5) * 5 + 5;
+        clearInterval(enemySpawnInterval);
+        enemySpawnInterval = setInterval(createEnemy, getSpawnDelay());
+      }
       enemy.remove();
       loseLife();
       return false;
@@ -399,11 +571,17 @@ function checkHits() {
 
         createExplosion(enemy.style.left, enemy.style.top);
         if (enemy.dataset.boss === 'true') {
-          defeatedBossLevels.add(level);
-          activeBossLevel = null;
+          const defeatedBossLevel = activeBossLevel;
+          defeatedBossLevels.add(defeatedBossLevel);
           maybeSpawnPowerUp(enemy.style.left, enemy.style.top);
           maybeSpawnPowerUp(parseFloat(enemy.style.left) + 54 + 'px', enemy.style.top);
+          enemy.remove();
+          updateScore(Number(enemy.dataset.points));
+          activeBossLevel = null;
+          nextBossLevel = Math.floor(level / 5) * 5 + 5;
+          clearInterval(enemySpawnInterval);
           enemySpawnInterval = setInterval(createEnemy, getSpawnDelay());
+          return;
         } else {
           maybeSpawnPowerUp(enemy.style.left, enemy.style.top);
         }
@@ -424,6 +602,7 @@ function gameLoop() {
 
   movePlayer();
   updateBullets();
+  updateBossBullets();
   updateEnemies();
   updatePowerUps();
   checkHits();
@@ -440,6 +619,9 @@ function startGame() {
   messageText.textContent = 'Use arrow keys to move, space to shoot, and P to pause.';
   startButton.textContent = 'Play';
   pauseButton.textContent = 'Pause';
+  message.classList.remove('notice');
+  closeInstructions();
+  closeSettings();
   message.classList.add('hidden');
   enemySpawnInterval = setInterval(createEnemy, getSpawnDelay());
   animationFrame = requestAnimationFrame(gameLoop);
@@ -455,6 +637,7 @@ function endGame() {
   messageText.textContent = 'Score: ' + score + ' | Best: ' + highScore;
   startButton.textContent = 'Play Again';
   pauseButton.textContent = 'Pause';
+  message.classList.remove('notice');
   message.classList.remove('hidden');
   playSound('gameOver');
 }
@@ -474,10 +657,15 @@ function updateLevel() {
   }
 
   level = nextLevel;
-  clearInterval(enemySpawnInterval);
   playSound('level');
 
-  if (level % 5 === 0) {
+  if (activeBossLevel !== null) {
+    return;
+  }
+
+  clearInterval(enemySpawnInterval);
+
+  if (level >= nextBossLevel) {
     createBoss();
     return;
   }
@@ -525,6 +713,7 @@ function togglePause() {
     messageText.textContent = 'Press P or the pause button to keep playing.';
     startButton.textContent = 'Restart';
     pauseButton.textContent = 'Resume';
+    message.classList.remove('notice');
     message.classList.remove('hidden');
     return;
   }
@@ -533,6 +722,46 @@ function togglePause() {
   pauseButton.textContent = 'Pause';
   enemySpawnInterval = setInterval(createEnemy, getSpawnDelay());
   animationFrame = requestAnimationFrame(gameLoop);
+}
+
+function closeInstructions() {
+  instructionsPanel.classList.add('hidden');
+  instructionsButton.setAttribute('aria-expanded', 'false');
+  instructionsButton.textContent = 'How to Play';
+}
+
+function closeSettings() {
+  settingsPanel.classList.add('hidden');
+  settingsButton.setAttribute('aria-expanded', 'false');
+}
+
+function toggleSettings() {
+  const isOpen = !settingsPanel.classList.contains('hidden');
+  settingsPanel.classList.toggle('hidden', isOpen);
+  settingsButton.setAttribute('aria-expanded', String(!isOpen));
+}
+
+function toggleInstructions() {
+  const isOpen = !instructionsPanel.classList.contains('hidden');
+  instructionsPanel.classList.toggle('hidden', isOpen);
+  instructionsButton.setAttribute('aria-expanded', String(!isOpen));
+  instructionsButton.textContent = isOpen ? 'How to Play' : 'Hide Instructions';
+}
+
+function exitToMenu() {
+  isRunning = false;
+  isPaused = false;
+  clearInterval(enemySpawnInterval);
+  cancelAnimationFrame(animationFrame);
+  resetGame();
+  closeInstructions();
+  closeSettings();
+  messageTitle.textContent = 'Space Invaders';
+  messageText.textContent = 'Use arrow keys to move, space to shoot, and P to pause.';
+  startButton.textContent = 'Play';
+  pauseButton.textContent = 'Pause';
+  message.classList.remove('notice');
+  message.classList.remove('hidden');
 }
 
 document.addEventListener('keydown', (event) => {
@@ -581,4 +810,21 @@ touchButtons.forEach((button) => {
 
 startButton.addEventListener('click', startGame);
 pauseButton.addEventListener('click', togglePause);
+instructionsButton.addEventListener('click', toggleInstructions);
+settingsButton.addEventListener('click', toggleSettings);
+soundToggle.addEventListener('change', () => {
+  isSoundEnabled = soundToggle.checked;
+  saveSoundSetting();
+});
+backgroundSelect.addEventListener('change', () => {
+  selectedBackground = backgroundSelect.value;
+  applyBackground(selectedBackground);
+  saveBackgroundSetting();
+});
+shipSelect.addEventListener('change', () => {
+  selectedShip = shipSelect.value;
+  applyShip(selectedShip);
+  saveShipSetting();
+});
+exitButton.addEventListener('click', exitToMenu);
 updateHud();
